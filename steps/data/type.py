@@ -1,3 +1,5 @@
+# modified by github/Gedeon23 on 2026-06-03: update huggingface-cli interface
+
 import os
 from pathlib import Path
 from typing import cast
@@ -12,7 +14,7 @@ class EquiBenchDatasets:
     def check_huggingface_login():
         """Check Hugging Face CLI login status"""
         print("Check Hugging Face CLI login status:")
-        if os.system("huggingface-cli whoami") != 0:
+        if os.system("hf auth whoami") != 0:
             raise RuntimeError("Please log in to Hugging Face using 'huggingface-cli login'.")
 
     @property
