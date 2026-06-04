@@ -1,4 +1,4 @@
-# modified by github/Gedeon23: added support for ollama and generic openai style APIs
+# modified by github/Gedeon23: added support for ollama, generic openai style APIs and ScaDS.AI
 
 # from litellm import completion
 import os
@@ -20,6 +20,8 @@ async def llm_generate(input: EvalInput) -> str:
             return await generate_ollama(input=input)
         case "together":
             return await generate_together(input=input)
+        case "scads-ai":
+            return await generate_scads_ai(input=input)
         case _:
             custom_api_type = os.environ.get(f"{input.model_platform.upper()}_API_TYPE")
             custom_api_base_url = os.environ.get(f"{input.model_platform.upper()}_API_BASE_URL")
@@ -53,6 +55,18 @@ async def generate_openai(input: EvalInput) -> str:
     )
     return chat_completion.choices[0].message.content
 
+@handle_error_openai
+@log_error_wrapper
+async def generate_scads_ai(input: EvalInput) -> str:
+    api_key  = os.environ["SCADS_AI_API_KEY"]
+    base_url = os.environ.get("SCADS_AI_BASE_URL", "https://llm.scads.ai/v1")
+    client = openai.AsyncClient(api_key=api_key, base_url=base_url)
+    chat_completion = await client.chat.completions.create(
+        messages = input.messages,
+        model    = input.model_name,
+    )
+    return chat_completion.choices[0].message.content
+
 @handle_error_anthropic
 @log_error_wrapper
 async def generate_anthropic(input: EvalInput) -> str:
@@ -69,7 +83,7 @@ async def generate_anthropic(input: EvalInput) -> str:
 async def generate_ollama(input: EvalInput) -> str:
     client = openai.AsyncClient(
         base_url= os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1/"),
-        api_key='ollama',  # required but ignored
+        api_key='ollama',
     )
     chat_completion = await client.chat.completions.create(
         messages = input.messages,
@@ -82,7 +96,7 @@ async def generate_ollama(input: EvalInput) -> str:
 async def generate_generic_openai_api(input: EvalInput) -> str:
     client = openai.AsyncClient(
         base_url= os.environ.get(f"{input.model_platform.upper()}_API_BASE_URL"),
-        api_key= os.environ.get(f"{input.model_platform.upper()}_API_KEY"),  # required but ignored
+        api_key= os.environ.get(f"{input.model_platform.upper()}_API_KEY", "none"),
     )
     chat_completion = await client.chat.completions.create(
         messages = input.messages,

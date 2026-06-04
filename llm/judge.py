@@ -69,6 +69,36 @@ async def judge_generic_openai_api(content: str, model_platform: str, model_name
                 case _:
                     raise error
 
+async def judge_scads_ai(content: str, model_name: str):
+    client = AsyncOpenAI(
+        api_key  = os.environ["SCADS_AI_API_KEY"],
+        base_url = os.environ.get("SCADS_AI_BASE_URL", "https://llm.scads.ai/v1"),
+    )
+    while True:
+        try:
+            completion = await client.beta.chat.completions.parse(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "Extract the code equivalent answer from text, the text answer YES means equivalent, answer NO means inequivalent. True for equivalent, False for not quivalent. If it is not decidable, return None. "},
+                    {"role": "user", "content": content},
+                ],
+                response_format=CodeEquivalentResult,
+            )
+            result = completion.choices[0].message.parsed
+            return result.equivalent
+        except (RateLimitError, InternalServerError, APIConnectionError) as error:
+            match error.code:
+                case "rate_limit_exceeded":
+                    if error.message.find("tokens per min (TPM)") != -1:
+                        await asyncio.sleep(60)
+                    else:
+                        await asyncio.sleep(1)
+                    continue
+                case "insufficient_quota":
+                    raise error
+                case _:
+                    raise error
+
 async def llm_judge(content: str):
     model_with_platform = os.environ.get("JUDGE_MODEL")
     if not model_with_platform:
@@ -80,6 +110,8 @@ async def llm_judge(content: str):
     match model_platform:
         case "openai":
             judge_api = lambda content: judge_openai(content, model_name=model_name)
+        case "scads-ai":
+            judge_api = lambda content: judge_scads_ai(content, model_name=model_name)
         case _:
             custom_api_type = os.environ.get(f"{model_platform.upper()}_API_TYPE")
             custom_api_base_url = os.environ.get(f"{model_platform.upper()}_API_BASE_URL")
