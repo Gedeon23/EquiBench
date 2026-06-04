@@ -1,4 +1,7 @@
+# modified by github/Gedeon23: added support for ollama and generic openai style APIs
+
 # from litellm import completion
+import os
 import anthropic
 import together
 import openai
@@ -6,14 +9,38 @@ import openai
 from steps.eval.type import EvalInput
 from .utils import log_error_wrapper,  handle_error_openai, handle_error_anthropic, handle_error_together
 
+# TODO
 async def llm_generate(input: EvalInput) -> str:
     match input.model_platform:
         case "openai":
             return await generate_openai(input=input)
         case "anthropic":
             return await generate_anthropic(input=input)
-        case _:
+        case "ollama":
+            return await generate_ollama(input=input)
+        case "together":
             return await generate_together(input=input)
+        case _:
+            custom_api_type = os.environ.get(f"{input.model_platform.upper()}_API_TYPE")
+            custom_api_base_url = os.environ.get(f"{input.model_platform.upper()}_API_BASE_URL")
+
+            if not custom_api_type or not custom_api_base_url:
+                raise RuntimeError(
+f"""
+{input.model_platform} is not a valid api provider. Change it or define type, base URL and API key for a custom api in your .env file:
+<provider>_API_BASE_URL=<provider_base_url>
+<provider>_API_KEY=<your_api_key>
+<provider>_API_TYPE=openai
+(currently only openai style APIs are supported)
+"""
+                )
+
+            match custom_api_type:
+                case "openai":
+                    return await generate_generic_openai_api(input=input)
+                case _:
+                    raise RuntimeError(f"{custom_api_type} is not supported as a custom api type. Currently only openai style APIs are supported.")
+            
 
 @handle_error_openai
 @log_error_wrapper
@@ -36,6 +63,32 @@ async def generate_anthropic(input: EvalInput) -> str:
         messages   = input.messages
     )
     return "".join([block.text for block in message.content])
+
+@handle_error_openai
+@log_error_wrapper
+async def generate_ollama(input: EvalInput) -> str:
+    client = openai.AsyncClient(
+        base_url= os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1/"),
+        api_key='ollama',  # required but ignored
+    )
+    chat_completion = await client.chat.completions.create(
+        messages = input.messages,
+        model    = input.model_name,
+    )
+    return chat_completion.choices[0].message.content
+
+@handle_error_openai
+@log_error_wrapper
+async def generate_generic_openai_api(input: EvalInput) -> str:
+    client = openai.AsyncClient(
+        base_url= os.environ.get(f"{input.model_platform.upper()}_API_BASE_URL"),
+        api_key= os.environ.get(f"{input.model_platform.upper()}_API_KEY"),  # required but ignored
+    )
+    chat_completion = await client.chat.completions.create(
+        messages = input.messages,
+        model    = input.model_name,
+    )
+    return chat_completion.choices[0].message.content
 
 @handle_error_together
 @log_error_wrapper

@@ -1,3 +1,5 @@
+# modified by github/Gedeon23: add support for generic openai style APIs 
+
 from enum import Enum
 import random
 from typing import Optional
@@ -44,7 +46,7 @@ class EvalInput:
 
     @property
     def model_names(self):
-        model_names = self.model_with_platform.split("/")
+        model_names = self.model_with_platform.split("/", maxsplit=1)
         assert len(model_names) == 2
         return model_names
 
