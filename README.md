@@ -141,8 +141,8 @@ When returning to work on EquiBench:
     **Option A**: Log in via command line and verify access:
 
     ```Shell
-    huggingface-cli login
-    huggingface-cli whoami
+    hf auth login
+    hf auth whoami
     ```
 
     **Option B**: Add your token directly to the `.env` file as the `HF_TOKEN` environment variable.
