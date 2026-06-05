@@ -6,6 +6,9 @@
 [![Python](https://img.shields.io/badge/Python->=3.12-blue.svg)](https://www.python.org/downloads/)
 [![HuggingFace](https://img.shields.io/badge/🤗%20Hugging%20Face-EquiBench_Datasets-orange.svg)](https://huggingface.co/datasets/anjiangwei/EquiBench-Datasets)
 
+> **Notice:** this is a fork of the original EquiBench repo.
+> This README has been modified to document the features added by this fork.
+
 ## Overview
 
 EquiBench is a comprehensive benchmark designed to evaluate the code reasoning capabilities of Large Language Models (LLMs) through equivalence checking tasks. This framework helps researchers and developers assess how well different LLMs understand code semantics, reason about program functionality, and determine when two code snippets are functionally equivalent despite syntactic differences.
@@ -84,7 +87,33 @@ EquiBench is a comprehensive benchmark designed to evaluate the code reasoning c
     OPENAI_API_KEY=<your OpenAI key here>
     ANTHROPIC_API_KEY=<your Anthropic key here>
     TOGETHER_API_KEY=<your Together key here>
+    SCADS_AI_API_KEY=<your ScaDS.AI API key>
     HF_TOKEN=<your HuggingFace access token here>
+    ```
+
+    or setup a custom API.
+
+    To use a custom api you need to define the base url, api key and api type inside your `.env` file.
+    Currently the only api type supported is openai.
+    
+    ```Shell
+    <provider>_API_BASE_URL=<provider_base_url>
+    <provider>_API_KEY=<your_api_key>
+    <provider>_API_TYPE=openai
+    ```
+    
+    for example:
+    
+    ```Shell
+    OPENROUTER_API_BASE_URL=https://openrouter.ai/api/v1 
+    OPENROUTER_API_KEY=<your_api_key>
+    OPENROUTER_API_TYPE=openai
+    ```
+    
+    after which you can access your models by simply prefixing the model name with `openrouter/`.
+    
+    ```Shell
+    openrouter/nvidia/nemotron-3-nano-30b-a3b:free
     ```
 
 ## Daily Setup
@@ -195,7 +224,8 @@ Each strategy tests different aspects of a model's reasoning capabilities, from 
 
 ## Supported Models
 
-EquiBench supports evaluation across a diverse range of LLMs:
+EquiBench supports evaluation across a diverse range of LLMs without further configuration
+and can be configured to work with any provider that implements the openai API:
 
 ### OpenAI Models
 
@@ -244,7 +274,22 @@ deepseek-ai/DeepSeek-R1
 deepseek-ai/DeepSeek-V3
 ```
 
-Additional models from OpenAI, Anthropic, and together.ai platforms are also supported.
+### Ollama
+
+```Shell
+ollama/qwen2.5-coder:7b
+ollama/gemma4:e4b
+ollama/qwen3.6:35b
+```
+
+### ScaDS.AI
+
+```Shell
+scads-ai/alias-coding
+scads-ai/alias-reasoning
+```
+
+Additional models from these platforms are also supported.
 
 ## HuggingFace Dataset
 
